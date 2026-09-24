@@ -1,0 +1,38 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Model weights — downloaded on first run, see README
+models/
+*.pt
+
+# Input footage and generated output
+videos/
+outputs/
+*.log
+
+# Media. Only the README's demo asset is committed; source footage is not.
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+*.jpg
+*.jpeg
+*.png
+*.gif
+!assets/demo.gif
+!examples/*.json

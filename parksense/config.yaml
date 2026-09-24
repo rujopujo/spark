@@ -1,0 +1,27 @@
+model:
+  path: models/parking_best_ep13.pt   # see README for the download link
+  confidence: 0.20          # detections below this score are ignored
+  classes: [0, 1]           # 0=Empty, 1=Occupied
+  imgsz: 1280               # inference resolution; overhead cars are small, so this matters
+
+video:
+  source: videos/lot.mp4    # your own footage; see README
+  display_width: 1280
+  display_height: 720
+  frame_interval: 1         # run detection every N frames
+
+parking:
+  slots_path: examples/slots_demo.json   # polygon slots, drawn with --discover-slots
+  discovery_frame: 0                     # frame the slot editor opens on
+  smoothing_window: 5                    # majority vote over N frames; 1 disables
+
+# Used only by --tiled: the frame is split into rows x cols overlapping tiles
+# which are batched into a single inference call.
+tiling:
+  rows: 3
+  cols: 3
+  overlap: 0.10             # fraction of tile size added to each edge
+
+editor:
+  host: 127.0.0.1
+  port: 5050
