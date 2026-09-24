@@ -4,11 +4,11 @@ import logging
 import sys
 
 
-def setup_logger(name="ParkSense", debug_mode=False):
+def setup_logger(name="SPARK", debug_mode=False):
     """Set up and configure a global logger with a standard formatter.
 
     Args:
-        name (str, optional): Name of the logger. Defaults to "ParkSense".
+        name (str, optional): Name of the logger. Defaults to "SPARK".
         debug_mode (bool, optional): If True, sets level to DEBUG. Defaults to False.
 
     Returns:
@@ -37,4 +37,4 @@ def setup_logger(name="ParkSense", debug_mode=False):
     return logger
 
 
-logger = logging.getLogger("ParkSense")
+logger = logging.getLogger("SPARK")

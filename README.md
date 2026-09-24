@@ -267,6 +267,13 @@ spark/
         │   └── CssdaBadge.jsx          # CSSDA visual design award tribute ribbon
         └── utils/                      # Client-Side Utilities
             └── sound.js                # Synthesized Web Audio API sound effects engine
+│
+└── spark/                              # Standalone CLI Vision & Slot Configuration Engine
+    ├── config.yaml                     # Standalone CLI configuration
+    ├── main.py                         # Single-camera detector CLI entry point
+    ├── requirements.txt                # CLI dependencies (YOLOv8, OpenCV, Flask)
+    ├── src/                            # Tiled pipeline, detector, overlay & logger
+    └── web/                            # In-browser HTML5/SVG slot configuration editor
 ```
 
 ---

@@ -20,7 +20,7 @@ def parse_args():
         argparse.Namespace: Parsed arguments.
     """
     parser = argparse.ArgumentParser(
-        description="ParkSense — parking lot occupancy from a fixed camera",
+        description="SPARK — parking lot occupancy from a fixed camera",
         formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument("--video",          default=None,  help="Path to video file (overrides config)")
