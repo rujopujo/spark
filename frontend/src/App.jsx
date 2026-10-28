@@ -157,7 +157,7 @@ export default function App() {
       setConnectionStatus("connecting");
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const host = window.location.hostname || "localhost";
-      const wsUrl = `${protocol}//${host}:8000/ws/live-parking`;
+      const wsUrl = `${protocol}//${host}:8001/ws/live-parking`;
 
       try {
         socket = new WebSocket(wsUrl);
