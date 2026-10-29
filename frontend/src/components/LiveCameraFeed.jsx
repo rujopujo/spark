@@ -46,12 +46,33 @@ export default function LiveCameraFeed({ parkingState, onLog, isCommandCenterVie
   const [uploadProgress, setUploadProgress] = useState("");
   const [isFeedFullscreen, setIsFeedFullscreen] = useState(false);
   const [streamError, setStreamError] = useState(false);
+  const [streamLoaded, setStreamLoaded] = useState(false);
   const [streamTimestamp, setStreamTimestamp] = useState(Date.now());
   const [tabMode, setTabMode] = useState("sources"); // "sources", "motion", "tuning", "dwell", "upload", "url"
   const [showCalibrator, setShowCalibrator] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
   // Three rendering engines: "ai_vision" (MJPEG), "hd_video" (HTML5 Video), "canvas" (Canvas Live Frame)
   const [displayMode, setDisplayMode] = useState("ai_vision");
+
+  // MJPEG <img> requests can remain pending forever if the worker has not
+  // produced its first frame (common after a hosted service wakes from sleep).
+  // Bound that wait, then retry so the panel never stays as an unexplained void.
+  useEffect(() => {
+    if (displayMode !== "ai_vision" || isPaused || streamLoaded) return undefined;
+    setStreamLoaded(false);
+    setStreamError(false);
+    const timeout = setTimeout(() => setStreamError(true), 15000);
+    return () => clearTimeout(timeout);
+  }, [displayMode, isPaused, streamTimestamp, streamLoaded]);
+
+  useEffect(() => {
+    if (!streamError || displayMode !== "ai_vision" || isPaused) return undefined;
+    const retry = setTimeout(() => {
+      setStreamError(false);
+      setStreamTimestamp(Date.now());
+    }, 5000);
+    return () => clearTimeout(retry);
+  }, [streamError, displayMode, isPaused]);
 
   const videoContainerRef = useRef(null);
   const nativeVideoRef = useRef(null);
@@ -400,15 +421,22 @@ export default function LiveCameraFeed({ parkingState, onLog, isCommandCenterVie
                 <img
                   src={isPaused ? undefined : apiUrl(`/api/live-stream?t=${streamTimestamp}`)}
                   alt="SPARK Live YOLOv8 Camera Feed"
-                  className="w-full h-full object-contain bg-slate-950"
-                  onError={() => setStreamError(true)}
+                  className={`w-full h-full object-contain bg-slate-950 transition-opacity duration-300 ${streamLoaded ? "opacity-100" : "opacity-0"}`}
+                  onLoad={() => {
+                    setStreamLoaded(true);
+                    setStreamError(false);
+                  }}
+                  onError={() => {
+                    setStreamLoaded(false);
+                    setStreamError(true);
+                  }}
                 />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 p-6 text-center space-y-3">
                   <AlertCircle className="w-10 h-10 text-amber-500 animate-bounce" />
                   <div className="space-y-1">
                     <p className="text-sm font-bold text-slate-200 font-display">
-                      Connecting to Camera Stream...
+                      Camera stream did not deliver a frame. Retrying automatically…
                     </p>
                     <p className="text-xs text-slate-400 max-w-sm">
                       You can also switch to <strong>Native HD Video</strong> or <strong>Canvas Mode</strong> above.

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { websocketUrl } from './api';
+import { apiUrl, websocketUrl } from './api';
 import {
   Car,
   Radio,
@@ -40,19 +40,19 @@ import ShortcutsModal from './components/ShortcutsModal';
 import LiveCameraFeed from './components/LiveCameraFeed';
 import { sound } from './utils/sound';
 
-const INITIAL_SLOTS = Array.from({ length: 20 }, (_, i) => ({
+const INITIAL_SLOTS = Array.from({ length: 16 }, (_, i) => ({
   id: i + 1,
-  label: `Slot-${String(i + 1).padStart(2, '0')}`,
-  status: [1, 3, 4, 7, 12, 15, 18].includes(i + 1) ? "OCCUPIED" : "FREE"
+  label: `Bay-${i < 8 ? "A" : "B"}${String((i % 8) + 1).padStart(2, "0")}`,
+  status: "FREE"
 }));
 
 export default function App() {
   const [parkingState, setParkingState] = useState({
     timestamp: new Date().toISOString(),
-    total_slots: 20,
-    available_slots: 13,
-    occupied_slots: 7,
-    occupancy_rate: 35.0,
+    total_slots: INITIAL_SLOTS.length,
+    available_slots: INITIAL_SLOTS.length,
+    occupied_slots: 0,
+    occupancy_rate: 0,
     slots: INITIAL_SLOTS
   });
 
@@ -68,10 +68,8 @@ export default function App() {
 
   const [activityLogs, setActivityLogs] = useState([
     { id: 1, time: "10:30:15", type: "system", msg: "Edge-AI Vision Gateway initialized with YOLOv8n" },
-    { id: 2, time: "10:30:16", type: "system", msg: "Polygon IoU matcher calibrated for 20 parking bays" },
-    { id: 3, time: "10:30:18", type: "occupied", msg: "Vehicle detected entering Slot-03 (IoU: 0.74)" },
-    { id: 4, time: "10:30:20", type: "free", msg: "Slot-09 cleared - status updated to FREE" },
-    { id: 5, time: "10:30:25", type: "occupied", msg: "Vehicle detected entering Slot-12 (IoU: 0.69)" },
+    { id: 2, time: "10:30:16", type: "system", msg: "Polygon IoU matcher calibrated for 16 parking bays" },
+    { id: 3, time: "10:30:18", type: "system", msg: "Waiting for the live parking state" },
   ]);
 
   const wsRef = useRef(null);
@@ -140,6 +138,34 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isMuted]);
 
+  // Load a REST snapshot immediately and keep polling as a fallback. Some
+  // managed hosts drop idle WebSockets; occupancy should still stay current.
+  useEffect(() => {
+    if (isSimulationMode) return;
+    let disposed = false;
+    const loadParkingState = async () => {
+      try {
+        const response = await fetch(apiUrl("/api/parking-state"), {
+          cache: "no-store",
+          signal: AbortSignal.timeout(10000)
+        });
+        if (!response.ok) throw new Error(`Parking state returned ${response.status}`);
+        const data = await response.json();
+        if (!disposed && Array.isArray(data.slots) && data.slots.length) {
+          setParkingState(data);
+        }
+      } catch (error) {
+        if (!disposed) console.warn("Could not refresh parking state:", error);
+      }
+    };
+    loadParkingState();
+    const interval = setInterval(loadParkingState, 5000);
+    return () => {
+      disposed = true;
+      clearInterval(interval);
+    };
+  }, [isSimulationMode]);
+
   // WebSocket Connection Handler
   useEffect(() => {
     if (isSimulationMode) {
@@ -153,21 +179,29 @@ export default function App() {
 
     let socket;
     let reconnectTimeout;
+    let connectionTimeout;
+    let disposed = false;
 
     const connectWebSocket = () => {
+      if (disposed) return;
       setConnectionStatus("connecting");
       const wsUrl = websocketUrl("/ws/live-parking");
 
       try {
         socket = new WebSocket(wsUrl);
         wsRef.current = socket;
+        connectionTimeout = setTimeout(() => {
+          if (socket.readyState === WebSocket.CONNECTING) socket.close();
+        }, 12000);
 
         socket.onopen = () => {
+          clearTimeout(connectionTimeout);
           setConnectionStatus("connected");
           addLog("system", "Live WebSocket connection established with Edge-AI Gateway");
         };
 
         socket.onmessage = (event) => {
+          if (disposed || socket !== wsRef.current) return;
           try {
             const data = JSON.parse(event.data);
             if (data && data.slots) {
@@ -197,25 +231,37 @@ export default function App() {
         };
 
         socket.onerror = () => {
-          setConnectionStatus("disconnected");
+          if (!disposed && socket === wsRef.current) setConnectionStatus("disconnected");
         };
 
         socket.onclose = () => {
+          clearTimeout(connectionTimeout);
+          if (disposed || socket !== wsRef.current) return;
           setConnectionStatus("disconnected");
           reconnectTimeout = setTimeout(() => {
-            if (!isSimulationMode) connectWebSocket();
+            if (!disposed) connectWebSocket();
           }, 3000);
         };
       } catch (e) {
         setConnectionStatus("disconnected");
+        reconnectTimeout = setTimeout(connectWebSocket, 3000);
       }
     };
 
     connectWebSocket();
 
     return () => {
+      disposed = true;
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
-      if (socket) socket.close();
+      if (connectionTimeout) clearTimeout(connectionTimeout);
+      if (socket) {
+        socket.onopen = null;
+        socket.onmessage = null;
+        socket.onerror = null;
+        socket.onclose = null;
+        socket.close();
+      }
+      if (wsRef.current === socket) wsRef.current = null;
     };
   }, [isSimulationMode]);
 
@@ -617,7 +663,7 @@ export default function App() {
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-2xl bg-white border border-slate-200 font-mono text-xs shadow-xs">
               <span className="text-slate-500 block text-[10px]">TOTAL PARKING BAYS</span>
-              <span className="text-lg font-bold text-slate-900">20 Calibrated</span>
+              <span className="text-lg font-bold text-slate-900">{parkingState.total_slots} Calibrated</span>
             </div>
             <div className="p-3 rounded-2xl bg-indigo-50 border border-indigo-200 font-mono text-xs shadow-xs">
               <span className="text-indigo-800 block text-[10px] font-bold">SYSTEM RELIABILITY</span>

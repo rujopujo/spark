@@ -56,7 +56,7 @@ export default function MetricRings({ parkingState }) {
             </span>
           </div>
           <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold">
-            20 BAYS
+            {total_slots} BAYS
           </span>
         </div>
 
@@ -66,7 +66,7 @@ export default function MetricRings({ parkingState }) {
               {total_slots}
             </div>
             <div className="text-xs text-slate-500 mt-0.5 font-mono">
-              Zone A (10) + Zone B (10)
+              {Math.ceil(total_slots / 2)} per zone • {total_slots} total
             </div>
           </div>
           <RadialRing percentage={100} color="#6366f1" />

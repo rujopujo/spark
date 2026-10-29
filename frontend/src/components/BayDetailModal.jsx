@@ -51,7 +51,7 @@ export default function BayDetailModal({ slot, onClose, onToggleStatus }) {
                 </span>
               </div>
               <p className="text-xs text-slate-500 font-mono mt-0.5">
-                {slot.id <= 10 ? "Zone A • North Ingress Deck" : "Zone B • South Perpendicular Array"}
+                {slot.label?.includes("-A") ? "Zone A • North Ingress Deck" : slot.label?.includes("-B") ? "Zone B • South Perpendicular Array" : slot.id <= 10 ? "Zone A • North Ingress Deck" : "Zone B • South Perpendicular Array"}
               </p>
             </div>
           </div>
