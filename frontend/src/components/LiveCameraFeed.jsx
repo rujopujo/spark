@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { apiUrl } from "../api";
 import {
   Video,
   Camera,
@@ -70,7 +71,7 @@ export default function LiveCameraFeed({ parkingState, onLog, isCommandCenterVie
 
       const fetchNextFrame = () => {
         if (!isMounted) return;
-        img.src = `http://localhost:8001/api/live-frame?t=${Date.now()}`;
+        img.src = apiUrl(`/api/live-frame?t=${Date.now()}`);
         img.onload = () => {
           if (!isMounted || !canvasRef.current) return;
           const canvas = canvasRef.current;
@@ -97,7 +98,7 @@ export default function LiveCameraFeed({ parkingState, onLog, isCommandCenterVie
 
   const fetchSources = async () => {
     try {
-      const res = await fetch("http://localhost:8001/api/video-sources");
+      const res = await fetch(apiUrl("/api/video-sources"));
       if (res.ok) {
         const data = await res.json();
         setSourcesList(data.sources || []);
@@ -118,7 +119,7 @@ export default function LiveCameraFeed({ parkingState, onLog, isCommandCenterVie
     try {
       setActiveSource(sourceId);
       setStreamError(false);
-      const res = await fetch("http://localhost:8001/api/set-video-source", {
+      const res = await fetch(apiUrl("/api/set-video-source"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ source_id: sourceId, custom_url: url })
@@ -146,7 +147,7 @@ export default function LiveCameraFeed({ parkingState, onLog, isCommandCenterVie
     setShowPolygons(p);
 
     try {
-      await fetch("http://localhost:8001/api/detection-params", {
+      await fetch(apiUrl("/api/detection-params"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -167,7 +168,7 @@ export default function LiveCameraFeed({ parkingState, onLog, isCommandCenterVie
       nativeVideoRef.current.playbackRate = speed;
     }
     try {
-      await fetch("http://localhost:8001/api/video-control", {
+      await fetch(apiUrl("/api/video-control"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ speed })
@@ -184,7 +185,7 @@ export default function LiveCameraFeed({ parkingState, onLog, isCommandCenterVie
       nativeVideoRef.current.play().catch(() => {});
     }
     try {
-      await fetch("http://localhost:8001/api/video-control", {
+      await fetch(apiUrl("/api/video-control"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ restart: true })
@@ -206,7 +207,7 @@ export default function LiveCameraFeed({ parkingState, onLog, isCommandCenterVie
     formData.append("file", file);
 
     try {
-      const res = await fetch("http://localhost:8001/api/upload-video", {
+      const res = await fetch(apiUrl("/api/upload-video"), {
         method: "POST",
         body: formData
       });
@@ -233,7 +234,7 @@ export default function LiveCameraFeed({ parkingState, onLog, isCommandCenterVie
   };
 
   const handleDownloadSnapshot = () => {
-    const streamUrl = `http://localhost:8001/api/live-frame?t=${Date.now()}`;
+    const streamUrl = apiUrl(`/api/live-frame?t=${Date.now()}`);
     const a = document.createElement("a");
     a.href = streamUrl;
     a.download = `spark-camera-snapshot-${Date.now()}.jpg`;
@@ -397,7 +398,7 @@ export default function LiveCameraFeed({ parkingState, onLog, isCommandCenterVie
             {displayMode === "ai_vision" && (
               !streamError ? (
                 <img
-                  src={isPaused ? undefined : `http://localhost:8001/api/live-stream?t=${streamTimestamp}`}
+                  src={isPaused ? undefined : apiUrl(`/api/live-stream?t=${streamTimestamp}`)}
                   alt="SPARK Live YOLOv8 Camera Feed"
                   className="w-full h-full object-contain bg-slate-950"
                   onError={() => setStreamError(true)}
@@ -440,7 +441,7 @@ export default function LiveCameraFeed({ parkingState, onLog, isCommandCenterVie
                 <video
                   ref={nativeVideoRef}
                   key={`${activeSource}-${streamTimestamp}`}
-                  src={`http://localhost:8001/api/video-file/${activeSource}`}
+                  src={apiUrl(`/api/video-file/${activeSource}`)}
                   autoPlay
                   loop
                   muted

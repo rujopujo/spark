@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { websocketUrl } from './api';
 import {
   Car,
   Radio,
@@ -155,9 +156,7 @@ export default function App() {
 
     const connectWebSocket = () => {
       setConnectionStatus("connecting");
-      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const host = window.location.hostname || "localhost";
-      const wsUrl = `${protocol}//${host}:8001/ws/live-parking`;
+      const wsUrl = websocketUrl("/ws/live-parking");
 
       try {
         socket = new WebSocket(wsUrl);

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { apiUrl } from "../api";
 import {
   Layers,
   Plus,
@@ -42,7 +43,7 @@ export default function PolygonCalibrator({
 
   const loadSlotsConfig = async () => {
     try {
-      const res = await fetch("http://localhost:8001/api/slots-config");
+      const res = await fetch(apiUrl("/api/slots-config"));
       if (res.ok) {
         const data = await res.json();
         setSlots(data.slots || []);
@@ -56,7 +57,7 @@ export default function PolygonCalibrator({
 
   const loadPresets = async () => {
     try {
-      const res = await fetch("http://localhost:8001/api/slot-presets");
+      const res = await fetch(apiUrl("/api/slot-presets"));
       if (res.ok) {
         const data = await res.json();
         setPresets(data);
@@ -69,7 +70,7 @@ export default function PolygonCalibrator({
   const handleApplyPreset = async (presetId) => {
     try {
       setIsSaving(true);
-      const res = await fetch(`http://localhost:8001/api/slot-presets/${presetId}`, {
+      const res = await fetch(apiUrl(`/api/slot-presets/${presetId}`), {
         method: "POST"
       });
       if (res.ok) {
@@ -162,7 +163,7 @@ export default function PolygonCalibrator({
   const handleSaveConfig = async () => {
     setIsSaving(true);
     try {
-      const res = await fetch("http://localhost:8001/api/slots-config", {
+      const res = await fetch(apiUrl("/api/slots-config"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ slots, preset_id: "custom" })
@@ -239,7 +240,7 @@ export default function PolygonCalibrator({
             <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-slate-800 shadow-inner bg-black">
               {/* Underlying Video Stream */}
               <img
-                src="http://localhost:8001/api/live-stream"
+                src={apiUrl("/api/live-stream")}
                 alt="Calibration Camera Stream"
                 className="w-full h-full object-contain pointer-events-none opacity-85"
               />
